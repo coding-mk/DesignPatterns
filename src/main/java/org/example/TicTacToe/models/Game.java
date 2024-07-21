@@ -1,5 +1,6 @@
 package org.example.TicTacToe.models;
 
+import org.example.TicTacToe.exceptions.InvalidMoveException;
 import org.example.TicTacToe.exceptions.InvalidPlayerCountException;
 import org.example.TicTacToe.exceptions.InvalideBotCountException;
 import org.example.TicTacToe.strategies.winningStrategies.WinningStrategy;
@@ -27,6 +28,62 @@ public class Game {
 
     public void printBoard(){
         board.print();
+    }
+
+    public void makeMove() throws InvalidMoveException {
+
+        Player currentPlayer = players.get(nextPlayerMoveindex);
+        System.out.println("It is " + currentPlayer.getName() + "'s move");
+
+        Move move = currentPlayer.makeMove(board);
+
+        if(!validateMove(move)){
+            throw  new InvalidMoveException("Invalid move please try again");
+        }
+
+        int row = move.getCell().getRow();
+        int col = move.getCell().getCol();
+
+        Cell cell = board.getBoard().get(row).get(col);
+        cell.setCellState(CellState.FILLED);
+        cell.setPlayer(currentPlayer);
+
+        Move finalMove = new Move(currentPlayer, cell);
+        moves.add(finalMove);
+
+        nextPlayerMoveindex = (nextPlayerMoveindex + 1) % players.size();
+
+        if(checkWinner(finalMove)){
+            winner = currentPlayer;
+            gameState = GameState.ENDED;
+        }else if (moves.size() == board.getDimension() * board.getDimension()){
+            gameState = GameState.DRAW;
+        }
+    }
+
+    private boolean checkWinner(Move finalMove) {
+        for(WinningStrategy winningStrategy : winningStrategies){
+            if(winningStrategy.checkWinner(board, finalMove)){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean validateMove(Move move) {
+        Player player = move.getPlayer();
+        Cell cell = move.getCell();
+        int row = cell.getRow();
+        int col = cell.getCol();
+
+        if(row < 0
+                || row >= board.getDimension()
+                || col < 0
+                || col>= board.getDimension()
+                ||board.getBoard().get(row).get(col).getCellState().equals(CellState.EMPTY)){
+            return false;
+        }
+        return true;
     }
 
     public Board getBoard() {
